@@ -1,17 +1,21 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MEALS } from '../data/meals';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useFavorites } from '../context/FavoriteMealsContext';
 
-// Định nghĩa kiểu cho params của route
+// Define the type for route params
 type RootStackParamList = {
   MealDetail: { mealId: string };
 };
 
 type MealDetailScreenRouteProp = RouteProp<RootStackParamList, 'MealDetail'>;
+type MealDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MealDetail'>;
 
-// Định nghĩa kiểu cho một món ăn
-type Meal = {
+// Define the type for a meal
+export type Meal = {
   id: string;
   categoryId: string;
   name: string;
@@ -25,7 +29,44 @@ type Meal = {
 
 const MealDetailScreen = () => {
   const route = useRoute<MealDetailScreenRouteProp>();
-  const { mealId } = route.params;
+  const navigation = useNavigation<MealDetailScreenNavigationProp>();
+  const mealId = route.params?.mealId; 
+  const { favoriteMeals, addFavorite, removeFavorite } = useFavorites();
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (mealId) {
+      const meal = MEALS.find(meal => meal.id === mealId) as Meal | undefined;
+      if (meal) {
+        setIsFavorite(favoriteMeals.some(favMeal => favMeal.id === meal.id));
+        navigation.setOptions({
+          title: meal.name,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => {
+              if (isFavorite) {
+                removeFavorite(meal.id);
+              } else {
+                addFavorite(meal);
+              }
+              setIsFavorite(!isFavorite);
+            }}>
+              <Icon
+                name={isFavorite ? "star" : "star-outline"}
+                size={24}
+                color="gold"
+                style={{ marginRight: 10 }}
+              />
+            </TouchableOpacity>
+          ),
+        });
+      }
+    }
+  }, [mealId, navigation, favoriteMeals, isFavorite, addFavorite, removeFavorite]);
+
+  if (!mealId) {
+    return <Text>Không có dữ liệu món ăn.</Text>;
+  }
 
   const selectedMeal = MEALS.find(meal => meal.id === mealId) as Meal | undefined;
 
@@ -38,7 +79,7 @@ const MealDetailScreen = () => {
       <Image source={{ uri: selectedMeal.imageUrl }} style={styles.image} />
       <Text style={styles.title}>{selectedMeal.name}</Text>
       <View style={styles.details}>
-        <Text>Thời gian nấu: {selectedMeal.duration}m</Text>
+        <Text>Thời gian nấu: {selectedMeal.duration} phút</Text>
         <Text>Độ phức tạp: {selectedMeal.complexity}</Text>
         <Text>Chi phí: {selectedMeal.affordability}</Text>
       </View>
@@ -66,7 +107,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   details: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-around',
     alignItems: 'center',
     padding: 8,

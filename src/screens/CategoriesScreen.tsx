@@ -1,25 +1,27 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { CATEGORIES } from '../data/meals';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// Định nghĩa kiểu cho RootStackParamList
 type RootStackParamList = {
-  Categories: undefined;
   MealsOverview: { categoryId: string };
-  // Thêm các màn hình khác nếu cần
 };
 
+type CategoriesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MealsOverview'>;
+
 const CategoriesScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<CategoriesScreenNavigationProp>();
 
   const renderCategoryItem = ({ item }: { item: (typeof CATEGORIES)[0] }) => (
-    <TouchableOpacity 
-      style={[styles.categoryItem, { backgroundColor: item.color }]}
+    <TouchableOpacity
+      style={styles.gridItem}
       onPress={() => navigation.navigate('MealsOverview', { categoryId: item.id })}
     >
-      <Text style={styles.categoryTitle}>{item.name}</Text>
+      <View style={styles.categoryContainer}>
+        <Image source={{ uri: item.imageUrl }} style={styles.categoryImage} />
+        <Text style={styles.categoryTitle}>{item.name}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -27,24 +29,40 @@ const CategoriesScreen = () => {
     <FlatList
       data={CATEGORIES}
       renderItem={renderCategoryItem}
-      numColumns={2}
+      keyExtractor={(item) => item.id}
+      numColumns={2}  // Hiển thị 2 cột
     />
   );
 };
 
 const styles = StyleSheet.create({
-  categoryItem: {
+  gridItem: {
     flex: 1,
-    margin: 15,
+    margin: 10,
     height: 150,
+  },
+  categoryContainer: {
+    flex: 1,
     borderRadius: 8,
-    justifyContent: 'center',
+    overflow: 'hidden',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    elevation: 5, 
+    shadowColor: 'black',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+  },
+  categoryImage: {
+    width: '100%',
+    height: '80%',
+    resizeMode: 'cover',
   },
   categoryTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: 'white',
+    marginTop: 8,
   },
 });
 
